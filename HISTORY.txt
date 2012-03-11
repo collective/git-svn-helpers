@@ -1,6 +1,9 @@
 0.9 - Unreleased
 ----------------
 
+* The cannonical repository is now in https://github.com/collective.
+  [rossp]
+
 * Fix the handling when switching to a svn branch that git already has
   a local branch for.
   [rossp]
