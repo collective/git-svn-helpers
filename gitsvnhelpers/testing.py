@@ -3,9 +3,12 @@ import os
 import StringIO
 from os.path import join
 import subprocess
+import doctest
 
 from jarn.mkrelease.testing import SubversionSetup, JailSetup, GitSetup
+from jarn.mkrelease.tee import popen
 from gitsvnhelpers import config
+from gitsvnhelpers import tests
 
 
 class BaseTestCase(SubversionSetup):
@@ -80,6 +83,34 @@ class BaseTestCase(SubversionSetup):
                 '%s' % self.checkoutdir]
         subprocess.check_call(args, stdout=subprocess.PIPE)
         os.chdir(self.checkoutdir)
+
+
+class DocFileCase(doctest.DocFileCase, BaseTestCase):
+
+    setUp = BaseTestCase.setUp
+    tearDown = BaseTestCase.tearDown
+
+    def __init__(self, *args, **kw):
+        BaseTestCase.__init__(self, *args, **kw)
+
+        # Ugh, copied from doctest.DocFileTest, why isn't this in
+        # doctest.DocFileCase.__init__?
+        doc, path = doctest._load_testfile(self.path, tests, True)
+        name = os.path.basename(path)
+        globs = dict(self=self, do=self.shell, __file__=path)
+        self._dt_optionflags = (
+            doctest.REPORT_ONLY_FIRST_FAILURE |
+            doctest.ELLIPSIS |
+            doctest.NORMALIZE_WHITESPACE)
+        self._dt_checker = None
+        self._dt_test = doctest.DocTestParser().get_doctest(
+            doc, globs, name, path, 0)
+
+    def shell(self, cmd):
+        """executes the shell command and prints its output"""
+        code, output = popen(cmd, False, False)
+        for line in output:
+            print line
 
 
 class StdOut(StringIO.StringIO):
